@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shop</title>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.js" integrity="sha256-H+K7U5CnXl1h5ywQfKtSj8PCmoN9aaq30gDh27Xc0jk=" crossorigin="anonymous"></script>
+    <link rel="stylesheet" href="index.css">
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.1/css/all.min.css" integrity="sha512-KfkfwYDsLkIlwQp6LFnl8zNdLGxu9YAA1QvwINks4PhcElQSvqcyVLLD9aMhXd13uQjoXtEKNosOWaZqXgel0g==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <script src="//cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+
+</head>
+<body>
+
+    <nav>
+        <div class="nav-container">
+            <a href="index.html">
+                <!-- <img src="./imgs/logo-full.png" class="logonav"> -->
+                <h1 style="color: #fff;">Sneaker Shop</h1>
+            </a>
+
+            <div class="nav-profile">
+                <p class="nav-profile-name">Bearbug</p>
+                <div onclick="openCart()" style="cursor: pointer;" class="nav-profile-cart">
+                    <i class="fas fa-cart-shopping"></i>
+                    <div id="cartcount" class="cartcount" style="display: none;">
+                        0
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="sidebar">
+            <input onkeyup="searchsomething(this)" id="txt_search" type="text" class="sidebar-search" placeholder="Search something...">
+            
+            <a onclick="searchproduct('all')" class="sidebar-items">
+                All product
+            </a>
+            <a onclick="searchproduct('shoe')" class="sidebar-items">
+                Shoe
+            </a>
+            <a onclick="searchproduct('shirt')" class="sidebar-items">
+                Shirt
+            </a>
+        </div>
+        <div id="productlist" class="product">
+            
+        </div>
+    </div>
+
+    <div id="modalDesc" class="modal" style="display: none;">
+        <div onclick="closeModal()" class="modal-bg"></div>
+        <div class="modal-page">
+            <h2>Detail</h2>
+            <br>
+            <div class="modaldesc-content">
+                <img id="mdd-img" class="modaldesc-img" src="https://images.unsplash.com/photo-1542291026-7eec264c27ff?ixlib=rb-1.2.1&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1740&q=80" alt="">
+                <div class="modaldesc-detail">
+                    <p id="mdd-name" style="font-size: 1.5vw;">Product name</p>
+                    <p id="mdd-price" style="font-size: 1.2vw;">500 THB</p>
+                    <br>
+                    <p id="mdd-desc" style="color: #adadad;">Lorem iaudantium harum doloremque alias. Quae, vel ipsum quasi, voluptas, sit optio nemo magni numquam non dicta voluptates porro! Vero eveniet numquam sit aut vel eligendi officiis iste tenetur expedita. Delectus vero quibusdam adipisci in. Esse.</p>
+                    <br>
+                    <p>เลือกไซส์รองเท้า</p>
+                    <div style="width: 100%; margin-bottom: 10px;">
+                        <button class="btn-size" id="btn-size40" onclick="selectSize(this ,'40')" style="background: #fff; color: #000; padding: 5px 25px; border-radius: 5px; border: 1px solid #000; cursor: pointer;">40</button>
+                        <button class="btn-size" id="btn-size42" onclick="selectSize(this ,'42')" style="background: #fff; color: #000; padding: 5px 25px; border-radius: 5px; border: 1px solid #000; cursor: pointer;">42</button>
+                        <button class="btn-size" id="btn-size44" onclick="selectSize(this ,'44')" style="background: #fff; color: #000; padding: 5px 25px; border-radius: 5px; border: 1px solid #000; cursor: pointer;">44</button>
+                    </div>
+                    <div class="btn-control">
+                        <button onclick="closeModal()" class="btn">
+                            Close
+                        </button>
+                        <button onclick="addtocart()" class="btn btn-buy">
+                            Add to cart
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="modalCart" class="modal" style="display: none;">
+        <div onclick="closeModal()" class="modal-bg"></div>
+        <div class="modal-page">
+            <h2>My cart</h2>
+            <br>
+            <div id="mycart" class="cartlist">
+
+            </div>
+
+            <div id="boxaddr" style="width: 100%; display: none;">
+              <p>ที่อยู่สำหรับการจัดส่ง</p>
+              <textarea id="txt_addr" style="width: 100%; border: none; padding: 10px; background: #f2f2f2; border-radius: 10px;"></textarea>
+            </div>
+            <div class="btn-control">
+                <button onclick="closeModal()" class="btn">
+                    Cancel
+                </button>
+                <button onclick="buynow()" class="btn btn-buy">
+                    Buy
+                </button>
+            </div>
+        </div>
+    </div>
+    
+  <script>
+
+    var product;
+
+    // [{},{},{}] // length = 3
+
+    $(document).ready(() => {
+
+        $.ajax({
+            method: 'get',
+            url: 'http://localhost:3000/api/getproduct',
+            success: function(response) {
+                console.log(response)
+                if(response.RespCode == 200) {
+
+                    product = response.Result;
+
+                    var html = '';
+                    for (let i = 0; i < product.length; i++) {
+                        html += `<div onclick="openProductDetail(${i})" class="product-items ${product[i].type}">
+                                    <img class="product-img" src="./imgs/${product[i].img}" alt="">
+                                    <p style="font-size: 1.2vw;">${product[i].name}</p>
+                                    <p stlye="font-size: 1vw;">${ numberWithCommas(product[i].price) } THB</p>
+                                </div>`;
+                    }
+                    $("#productlist").html(html);
+                }
+            }, error: function(err) {
+                console.log(err)
+            }
+        })
+    })
+
+    function numberWithCommas(x) {
+        x = x.toString();
+        var pattern = /(-?\d+)(\d{3})/;
+        while (pattern.test(x))
+            x = x.replace(pattern, "$1,$2");
+        return x;
+    }
+
+    function searchsomething(elem) {
+        // console.log('#'+elem.id)
+        var value = $('#'+elem.id).val()
+        console.log(value)
+
+        var html = '';
+        for (let i = 0; i < product.length; i++) {
+            if( product[i].name.includes(value) ) {
+                html += `<div onclick="openProductDetail(${i})" class="product-items ${product[i].type}">
+                        <img class="product-img" src="./imgs/${product[i].img}" alt="">
+                        <p style="font-size: 1.2vw;">${product[i].name}</p>
+                        <p stlye="font-size: 1vw;">${ numberWithCommas(product[i].price) } THB</p>
+                    </div>`;
+            }
+        }
+        if(html == '') {
+            $("#productlist").html(`<p>Not found product</p>`);
+        } else {
+            $("#productlist").html(html);
+        }
+
+    }
+
+    function searchproduct(param) {
+        console.log(param)
+        $(".product-items").css('display', 'none')
+        if(param == 'all') {
+            $(".product-items").css('display', 'block')
+        }
+        else {
+            $("."+param).css('display', 'block')
+        }
+    }
+
+    var productindex = 0;
+    function openProductDetail(index) {
+        sizeShoe = '';
+
+        productindex = index;
+        console.log(productindex)
+        $("#modalDesc").css('display', 'flex')
+        $("#mdd-img").attr('src', './imgs/' + product[index].img);
+        $("#mdd-name").text(product[index].name)
+        $("#mdd-price").text( numberWithCommas(product[index].price) + ' THB')
+        $("#mdd-desc").text(product[index].description)
+    }
+
+    function closeModal() {
+        $(".modal").css('display','none')
+        sizeShoe = '';
+        $('.btn-size').removeClass('size-active')
+    }
+
+    var cart = [];
+    function addtocart() {
+        var validate = true;
+
+        if(!$('.btn-size').hasClass('size-active')) {
+            validate = false;
+            Swal.fire({
+                icon: 'warning',
+                title: 'โปรดเลือกไซส์รองเท้า'
+            })
+        }
+        if(validate) {
+            var pass = true;
+            $("#boxaddr").css('display', 'block')
+
+            for (let i = 0; i < cart.length; i++) {
+                if( productindex == cart[i].index ) {
+                    if( sizeShoe == cart[i].size ) {
+                        console.log('found same product')
+                        cart[i].count++;
+                        pass = false;
+                    }
+                }
+            }
+
+            if(pass) {
+                var obj = {
+                    index: productindex,
+                    id: product[productindex].id,
+                    name: product[productindex].name,
+                    price: product[productindex].price,
+                    img: product[productindex].img,
+                    count: 1,
+                    size: sizeShoe
+                };
+                // console.log(obj)
+                cart.push(obj)
+            }
+            console.log(cart)
+
+            Swal.fire({
+                icon: 'success',
+                title: 'Add ' + product[productindex].name + ' to cart !'
+            })
+            $("#cartcount").css('display','flex').text(cart.length)
+        }
+        
+    }
+
+    function openCart() {
+        $('#modalCart').css('display','flex')
+        rendercart();
+    }
+
+    function rendercart() {
+        if(cart.length > 0) {
+            var html = '';
+            var sum = 0;
+            for (let i = 0; i < cart.length; i++) {
+                sum += cart[i].price * cart[i].count;
+                html += `<div class="cartlist-items">
+                            <div class="cartlist-left">
+                                <img src="./imgs/${cart[i].img}" alt="">
+                                <div class="cartlist-detail">
+                                    <p style="font-size: 1.5vw;">${cart[i].name}</p>
+                                    <p style="font-size: 1.2vw;">ไซส์ ${cart[i].size}</p>
+                                    <p style="font-size: 1.2vw;">${ numberWithCommas(cart[i].price * cart[i].count) } THB</p>
+                                </div>
+                            </div>
+                            <div class="cartlist-right">
+                                <p onclick="deinitems('-', ${i})" class="btnc">-</p>
+                                <p id="countitems${i}" style="margin: 0 20px;">${cart[i].count}</p>
+                                <p onclick="deinitems('+', ${i})" class="btnc">+</p>
+                            </div>
+                        </div>`;
+            }
+            html += `
+                <div style="font-size: 1.4rem; width: 100%; display: flex; justify-content: flex-end;">
+                    <p style="margin-right: 20px;">รวม</p>
+                    <p><span id="realtotal">${numberWithCommas(sum)}</span> บาท</p>
+                </div>
+            `
+            $("#mycart").html(html)
+        }
+        else {
+            $("#mycart").html(`<p>Not found product list</p>`)
+        }
+    }
+
+    function deinitems(action, index) {
+        if(action == '-') {
+            if(cart[index].count > 0) {
+                cart[index].count--;
+                $("#countitems"+index).text(cart[index].count)
+
+                if(cart[index].count <= 0) {
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Are you sure to delete?',
+                        showConfirmButton: true,
+                        showCancelButton: true,
+                        confirmButtonText: 'Delete',
+                        cancelButtonText: 'Cancel'
+                    }).then((res) => {
+                      if(res.isConfirmed) {
+                        cart.splice(index, 1) 
+                        console.log(cart)
+                        rendercart();
+                        $("#cartcount").css('display','flex').text(cart.length)
+                        
+                        if(cart.length <= 0) {
+                            $("#cartcount").css('display','none')
+                        }
+                      }  
+                      else {
+                        cart[index].count++;
+                        $("#countitems"+index).text(cart[index].count)
+                      }
+                    })
+                }
+            }
+        }
+        else if(action == '+') {
+            cart[index].count++;
+            $("#countitems"+index).text(cart[index].count)
+        }
+
+        var precal = 0;
+        for (let i = 0; i < cart.length; i++) {
+            precal += cart[i].count * cart[i].price
+            console.log(precal)
+        }
+        $("#realtotal").text(numberWithCommas(precal))
+    }
+
+    function buynow() {
+        var pass = true;
+        if($('#txt_addr').val().length <= 0) {
+          pass = false;
+          Swal.fire({
+            icon: 'warning',
+            title: 'โปรดกรอกที่อยู่สำหรับจัดส่ง'
+          })
+        }
+
+        if(pass) {
+          var amount = 0;
+          var shiping = 100;
+          for (let i = 0; i < cart.length; i++) {
+            amount += parseInt(cart[i].price) * parseInt(cart[i].count);
+          }
+          var netamount = amount + shiping
+
+          Swal.fire({
+            icon: 'info',
+            title: 'ยืนยันการสั่งซื้อ',
+            html: `
+              <div style="width: 200px; margin: 0 auto;">
+                <div style="display: flex; align-items: center; justify-content: space-between;">
+                  <p>ราคา​ : </p>
+                  <p>${numberWithCommas(amount)} บาท</p>
+                </div>
+                <div style="display: flex; align-items: center; justify-content: space-between;">
+                  <p>ค่าส่ง : </p>
+                  <p>${numberWithCommas(shiping)} บาท</p>
+                </div>
+                <div style="display: flex; align-items: center; justify-content: space-between;">
+                  <p>รวม : </p>
+                  <p>${numberWithCommas(netamount)} บาท</p>
+                </div>
+              </div>
+            `
+          }).then((res) => {
+            if(res.isConfirmed) {
+              $.ajax({
+                  method: 'post',
+                  url: 'http://localhost:3000/api/buynow',
+                  data: {
+                      product: cart,
+                      addr: $('#txt_addr').val()
+                  }, success: function(response) {
+                      console.log(response)
+                      if(response.RespCode == 200) {
+                          Swal.fire({
+                              icon: 'success',
+                              title: 'สำเร็จ',
+                              text: 'หมายเลขการสั่งซื้อ ' + response.Result.tx + ' คุณจะได้รับสินค้าภายใน 3-7 วันทำการ'
+                          }).then((res) => {
+                              if(res.isConfirmed) {
+                                  cart = [];
+                                  closeModal();
+                                  $("#cartcount").css('display','none')
+                                  $("#boxaddr").css('display', 'none').val('')
+                              }
+                          })
+                      }
+                      else {
+                          Swal.fire({
+                              icon: 'error',
+                              title: 'Something is went wrong!'
+                          })
+                      }
+                  }, error: function(err) {
+                      console.log(err)
+                  }
+              })
+            }
+          })
+        }
+    }
+
+    var sizeShoe = '';
+    function selectSize(elem, size) {
+        $('.btn-size').removeClass('size-active')
+        $('#'+elem.id).addClass('size-active')
+        sizeShoe = size
+    }
+  </script>
+
+    
+</body>
+</html>
